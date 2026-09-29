@@ -1,0 +1,48 @@
+# Every push: build pico-os's pico compiler, compile every package with
+# it (a package that does not compile fails the build), and write the
+# index again, committing it when it has changed. The board reads
+# index.txt and the sources straight from this repository.
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch pico-os, for its compiler
+        uses: actions/checkout@v4
+        with:
+          repository: Andre-cmd-rgb/pico-os
+          path: pico-os
+
+      - name: Build the compiler
+        run: make -C pico-os/lang
+
+      - name: Compile every package
+        run: |
+          for src in packages/*/*.pico; do
+            echo "== $src"
+            pico-os/lang/build/host/picoc -o /tmp/compiled "$src"
+          done
+
+      - name: Write the index
+        run: python3 tools/mkindex.py > index.txt
+
+      - name: Commit the index if it changed
+        if: github.event_name == 'push'
+        run: |
+          if ! git diff --quiet index.txt; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "index: written again" index.txt
+            git push
+          fi

@@ -1,0 +1,7 @@
+# pico-os packages: name, version, size, sha256, about (tools/mkindex.py)
+guess	1.0	874	c6ab647accd22612274b8116b32bdb3f9ae1b34748959a6a77805d0ddf9052ad	guess the number from 1 to 100
+life	1.0	2006	022e20808fabd273818b413a41fa6cbee8c4811e2a164868bf31e8fd62932e55	Conway's game of life in the terminal
+mandel	1.0	2784	590ec22498b36ab7fab173315c0b6da42bd902ee03952f13cd85fadec52ca08b	an animated Mandelbrot zoom
+matrix	1.0	2615	f81c3cbd796346d7bf99935a9df7cfceb0fe1cfa4d4f43dc8f3c40eba880f55a	digital rain, as in the film
+snake	1.0	3366	4cc6158f7549aba67f8153e2d0a2719373b3dc5c856598c0cc4649f805f7212e	the game: arrows or WASD steer, eat, grow, don't crash
+weather	1.0	3247	9eda071b2cbe1e1e65f660042d565a1ee4e251d29e45a946590d9caa22d45aa7	the weather now anywhere, from Open-Meteo: weather Tokyo

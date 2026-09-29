@@ -1,0 +1,2 @@
+version 1.0
+about the weather now anywhere, from Open-Meteo: weather Tokyo

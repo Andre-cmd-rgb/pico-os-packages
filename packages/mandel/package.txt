@@ -1,0 +1,2 @@
+version 1.0
+about an animated Mandelbrot zoom

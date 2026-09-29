@@ -1,0 +1,2 @@
+version 1.0
+about Conway's game of life in the terminal

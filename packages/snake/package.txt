@@ -1,0 +1,2 @@
+version 1.0
+about the game: arrows or WASD steer, eat, grow, don't crash
