@@ -1,13 +1,18 @@
-# Every push: build pico-os's pico compiler, compile every package with
-# it (a package that does not compile fails the build), and write the
-# index again, committing it when it has changed. The board reads
-# index.txt and the sources straight from this repository.
+# Every push, every day, and on demand: build pico-os's pico compiler,
+# compile every package with it into images/ (a package that does not
+# compile fails the build), check each program with `picoc -t`, and write
+# the indexes again, committing whatever has changed. The board reads
+# index.txt, images.txt and the files straight from this repository.
+# Daily, so that the programs follow the compiler when pico-os changes.
 name: build
 
 on:
   push:
     branches: [main]
   pull_request:
+  schedule:
+    - cron: "17 4 * * *"
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -27,22 +32,31 @@ jobs:
       - name: Build the compiler
         run: make -C pico-os/lang
 
+      # From the package's own folder, so the program names its source
+      # NAME.pico, as one compiled on the board would.
       - name: Compile every package
         run: |
-          for src in packages/*/*.pico; do
-            echo "== $src"
-            pico-os/lang/build/host/picoc -o /tmp/compiled "$src"
+          picoc="$PWD/pico-os/lang/build/host/picoc"
+          rm -rf images && mkdir images
+          for dir in packages/*/; do
+            name=$(basename "$dir")
+            echo "== $name"
+            (cd "$dir" && "$picoc" -o "../../images/$name" "$name.pico")
+            "$picoc" -t "images/$name"
           done
 
-      - name: Write the index
-        run: python3 tools/mkindex.py > index.txt
-
-      - name: Commit the index if it changed
-        if: github.event_name == 'push'
+      - name: Write the indexes
         run: |
-          if ! git diff --quiet index.txt; then
+          python3 tools/mkindex.py > index.txt
+          python3 tools/mkindex.py --images > images.txt
+
+      - name: Commit what changed
+        if: github.event_name != 'pull_request'
+        run: |
+          git add -A index.txt images.txt images
+          if ! git diff --cached --quiet; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git commit -m "index: written again" index.txt
+            git commit -m "programs and indexes: compiled again"
             git push
           fi

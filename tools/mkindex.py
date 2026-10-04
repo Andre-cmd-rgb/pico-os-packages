@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""The index the board's `pkg` reads: a line a package, tab-separated.
+"""The indexes the board's `pkg` reads: a line a package, tab-separated.
 
-    name  version  size  sha256  about
+    index.txt    name  version  size  sha256  about
+    images.txt   name  source-sha256  size  sha256
 
 Each package is packages/NAME/NAME.pico, its source, and
 packages/NAME/package.txt:
@@ -9,11 +10,14 @@ packages/NAME/package.txt:
     version 1.2
     about what it is, in a few words
 
-The board downloads the source, checks its sha256 against this line, and
-compiles it with its own picoc into ~/bin/NAME: a package is never
-compiled for another version of the language than the board speaks.
+The board downloads the source and checks its sha256 against index.txt.
+images/NAME is the source compiled by the build with pico-os's picoc;
+images.txt says which source each program was made from, so the board
+takes a program only for the very source it has, and checks it with
+`picoc -t` before using it -- else it compiles the source itself.
 
     python3 tools/mkindex.py > index.txt
+    python3 tools/mkindex.py --images > images.txt
 """
 import hashlib
 import os
@@ -24,7 +28,29 @@ ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 NAME = re.compile(r"^[a-z][a-z0-9_-]{0,23}$")
 
 
+def sha256(path):
+    with open(path, "rb") as f:
+        return hashlib.sha256(f.read()).hexdigest()
+
+
+def images():
+    """The compiled programs in images/, each by the source it came from."""
+    print("# pico-os packages compiled by the build: name, source sha256, size, sha256 "
+          "(tools/mkindex.py --images)")
+    folder = os.path.join(ROOT, "images")
+    for name in sorted(os.listdir(folder)) if os.path.isdir(folder) else []:
+        image = os.path.join(folder, name)
+        src = os.path.join(ROOT, "packages", name, name + ".pico")
+        if not NAME.match(name) or not os.path.isfile(src):
+            print(f"mkindex: images/{name}: no package of that name", file=sys.stderr)
+            return 1
+        print(f"{name}\t{sha256(src)}\t{os.path.getsize(image)}\t{sha256(image)}")
+    return 0
+
+
 def main():
+    if sys.argv[1:] == ["--images"]:
+        return images()
     pkgs = os.path.join(ROOT, "packages")
     bad = False
     print("# pico-os packages: name, version, size, sha256, about (tools/mkindex.py)")
